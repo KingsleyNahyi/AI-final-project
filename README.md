@@ -24,3 +24,8 @@ The notebook and dataset are only required for training or reproducing the model
 2. Create a virtual environment and install all dependencies and libraries in requirements.txt
 3. Run python app.py or python3 app.py
 4. http://127.0.0.1:5000 will appear. Copy and paste it into the url bar in your browser and hit enter.
+
+
+Limitations
+1. The program was trained on data gotten from a study made in Brazil. The "neighbourhood" factor in the application only applies for locations in Brazil. It was possible to change locations to Ghanaian neighbourhoods, but since the relationship between Ghanaian neighbourhoods and appointment diligence is not established to the machine learning model, the nighbourhood factor will play no role in the prediction.
+2. SVM is a computationally expensive model to train. It requires exorbitant amount of time to train and test.
