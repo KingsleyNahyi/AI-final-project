@@ -5,17 +5,16 @@ from flask import Flask, render_template, request
 import joblib
 import pandas as pd
 
-
+#calling flask
 app = Flask(__name__)
 
-# Resolve the saved artifacts relative to this file. This allows the app to be
-# started from any working directory without breaking the joblib paths.
+
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "svm_model.pkl"
 SCALER_PATH = BASE_DIR / "svm_scaler.pkl"
 FEATURE_COLUMNS_PATH = BASE_DIR / "svm_feature_columns.pkl"
 
-
+#loading files
 def load_artifact(path, description):
     if not path.exists():
         raise FileNotFoundError(
@@ -24,23 +23,20 @@ def load_artifact(path, description):
         )
     return joblib.load(path)
 
-
+#using the trained svm module and the fitted scalar 
 model = load_artifact(MODEL_PATH, "trained SVM model")
 scaler = load_artifact(SCALER_PATH, "fitted scaler")
 feature_columns = list(
     load_artifact(FEATURE_COLUMNS_PATH, "saved feature-column list")
 )
 
-# The source dataset kept some names capitalized (for example Scholarship,
-# Diabetes and Alcoholism). Resolve ordinary field names to the model's exact
-# saved spelling so reindex() does not silently replace submitted values with 0.
 FEATURE_NAME_LOOKUP = {
     column.casefold(): column
     for column in feature_columns
     if not column.startswith(("appt_weekday_", "neighbourhood_"))
 }
 
-# These are the only columns scaled in the training notebook.
+#numerical columns
 NUMERICAL_COLUMNS = ["age", "days_until_appointment"]
 
 missing_numerical_columns = set(NUMERICAL_COLUMNS) - set(feature_columns)
@@ -50,10 +46,7 @@ if missing_numerical_columns:
         + ", ".join(sorted(missing_numerical_columns))
     )
 
-# get_dummies(drop_first=True) removed the first category from each group.
-# For this dataset those reference categories are Friday and AEROPORTO. When a
-# reference category is selected, all dummy columns in that group correctly
-# remain zero.
+
 BASELINE_WEEKDAY = "Friday"
 BASELINE_NEIGHBOURHOOD = "AEROPORTO"
 
@@ -178,7 +171,7 @@ def build_input_row(form):
 
 
 def sigmoid(value):
-    """Convert an SVM margin into a bounded score without numerical overflow."""
+   
     if value >= 0:
         exp_value = math.exp(-value)
         return 1.0 / (1.0 + exp_value)
@@ -187,24 +180,21 @@ def sigmoid(value):
 
 
 def predict_no_show(input_df):
-    """Return the binary prediction and the best available no-show score."""
+    
     prediction = int(model.predict(input_df)[0])
     classes = list(getattr(model, "classes_", [0, 1]))
 
     if 1 not in classes:
         raise ValueError("The loaded model has no class labelled 1 (no-show).")
 
-    # This branch is used automatically if the SVC is later retrained with
-    # probability=True or replaced by another probabilistic classifier.
+   
+    # probability=True
     if hasattr(model, "predict_proba"):
         no_show_index = classes.index(1)
         probability = float(model.predict_proba(input_df)[0][no_show_index])
         return prediction, probability, True
 
-    # The current final SVC has probability=False. Its decision_function is a
-    # signed distance from the classification boundary, not a calibrated
-    # probability. Applying a sigmoid provides a useful 0-100 relative risk
-    # score while preserving 50% as the SVM decision boundary.
+
     if hasattr(model, "decision_function"):
         margin = float(model.decision_function(input_df)[0])
         if len(classes) == 2 and classes[1] != 1:
@@ -252,8 +242,7 @@ def index():
                     "risk_level": risk_level,
                     "color": color,
                     "message": message,
-                    # Keep `proba` for compatibility with the existing template.
-                    # For the current SVC it contains a relative risk score.
+                   
                     "proba": round(score * 100, 1) if score is not None else None,
                     "score_label": (
                         "No-show probability"
@@ -277,6 +266,5 @@ def index():
 
 
 if __name__ == "__main__":
-    # Keep debug mode off by default so the development server does not expose
-    # its interactive debugger. Enable it explicitly through Flask when needed.
+  
     app.run(debug=False)
