@@ -20,3 +20,7 @@ The .pkl files are saved files from the app that separate the program into the m
 The notebook and dataset are only required for training or reproducing the model. They are not required to run the web application after the `.pkl` files have been created.
 
 **How To Run The Program**
+1. Once the project structure has been followed, open the folder in your IDE.
+2. Create a virtual environment and install all dependencies and libraries in requirements.txt
+3. Run python app.py or python3 app.py
+4. http://127.0.0.1:5000 will appear. Copy and paste it into the url bar in your browser and hit enter.
