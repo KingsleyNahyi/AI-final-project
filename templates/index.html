@@ -37,6 +37,13 @@
     .result.orange { background: #fff4e5; color: #b8620a; }
     .result.red    { background: #fdecea; color: #c0392b; }
     .result .pct   { font-size: 28px; font-weight: 700; }
+    .result-title  { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .score-label   { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+    .score-note    { font-size: 12px; margin-top: 10px; opacity: 0.8; }
+    .error {
+        margin: 16px 0; padding: 12px; border-radius: 6px;
+        background: #fdecea; color: #a5281b; font-size: 13px;
+    }
 </style>
 </head>
 <body>
@@ -44,59 +51,95 @@
     <h1>Appointment No-Show Risk Checker</h1>
     <p class="subtitle">Enter patient/appointment details to estimate no-show risk</p>
 
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
     <form method="POST">
         <label>Age</label>
-        <input type="number" name="age" min="0" required>
+        <input type="number" name="age" min="0" max="120"
+               value="{{ form_data.get('age', '') }}" required>
 
         <label>Gender</label>
-        <select name="gender">
-            <option value="F">Female</option>
-            <option value="M">Male</option>
+        <select name="gender" required>
+            <option value="F" {% if form_data.get('gender', 'F') == 'F' %}selected{% endif %}>Female</option>
+            <option value="M" {% if form_data.get('gender') == 'M' %}selected{% endif %}>Male</option>
         </select>
 
         <label>Days until appointment</label>
-        <input type="number" name="days_until_appointment" min="0" required>
+        <input type="number" name="days_until_appointment" min="0"
+               value="{{ form_data.get('days_until_appointment', '') }}" required>
 
         <label>Appointment weekday</label>
-        <select name="appt_weekday">
-            <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
-            <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        <select name="appt_weekday" required>
+            {% for weekday in weekday_options %}
+            <option value="{{ weekday }}"
+                    {% if form_data.get('appt_weekday') == weekday %}selected{% endif %}>
+                {{ weekday }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label>Neighbourhood</label>
+        <select name="neighbourhood" required>
+            {% for neighbourhood in neighbourhood_options %}
+            <option value="{{ neighbourhood }}"
+                    {% if form_data.get('neighbourhood') == neighbourhood %}selected{% endif %}>
+                {{ neighbourhood }}
+            </option>
+            {% endfor %}
         </select>
 
         <label>SMS reminder received?</label>
-        <select name="sms_received">
-            <option value="1">Yes</option>
-            <option value="0">No</option>
+        <select name="sms_received" required>
+            <option value="1" {% if form_data.get('sms_received', '1') == '1' %}selected{% endif %}>Yes</option>
+            <option value="0" {% if form_data.get('sms_received') == '0' %}selected{% endif %}>No</option>
         </select>
 
         <label>Has hypertension?</label>
-        <select name="hypertension">
-            <option value="0">No</option>
-            <option value="1">Yes</option>
+        <select name="hypertension" required>
+            <option value="0" {% if form_data.get('hypertension', '0') == '0' %}selected{% endif %}>No</option>
+            <option value="1" {% if form_data.get('hypertension') == '1' %}selected{% endif %}>Yes</option>
         </select>
 
         <label>Has diabetes?</label>
-        <select name="diabetes">
-            <option value="0">No</option>
-            <option value="1">Yes</option>
+        <select name="diabetes" required>
+            <option value="0" {% if form_data.get('diabetes', '0') == '0' %}selected{% endif %}>No</option>
+            <option value="1" {% if form_data.get('diabetes') == '1' %}selected{% endif %}>Yes</option>
         </select>
 
         <label>Scholarship (welfare program)?</label>
-        <select name="scholarship">
-            <option value="0">No</option>
-            <option value="1">Yes</option>
+        <select name="scholarship" required>
+            <option value="0" {% if form_data.get('scholarship', '0') == '0' %}selected{% endif %}>No</option>
+            <option value="1" {% if form_data.get('scholarship') == '1' %}selected{% endif %}>Yes</option>
+        </select>
+
+        <label>Alcoholism?</label>
+        <select name="alcoholism" required>
+            <option value="0" {% if form_data.get('alcoholism', '0') == '0' %}selected{% endif %}>No</option>
+            <option value="1" {% if form_data.get('alcoholism') == '1' %}selected{% endif %}>Yes</option>
         </select>
 
         <label>Handicap level (0–4)</label>
-        <input type="number" name="handicap" min="0" max="4" value="0" required>
+        <input type="number" name="handicap" min="0" max="4"
+               value="{{ form_data.get('handicap', '0') }}" required>
 
         <button type="submit">Check Risk</button>
     </form>
 
-    {% if proba is defined %}
+    {% if result %}
     <div class="result {{ color }}">
-        <div class="pct">{{ proba }}%</div>
-        <div>{{ risk_level }} risk — {{ message }}</div>
+        <div class="result-title">{{ result }}</div>
+        {% if proba is not none %}
+        <div class="pct">
+            {{ proba }}{% if is_probability %}%{% else %}/100{% endif %}
+        </div>
+        <div class="score-label">{{ score_label }}</div>
+        {% endif %}
+        <div><strong>{{ risk_level }} risk</strong> — {{ message }}</div>
+        {% if score_note %}
+        <div class="score-note">{{ score_note }}</div>
+        {% endif %}
     </div>
     {% endif %}
 </div>
